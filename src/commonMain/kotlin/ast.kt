@@ -47,3 +47,14 @@ class PrefixExpression(override val token: Token, val operator: String, val righ
         return "($operator$right)"
     }
 }
+
+class InfixExpression(
+    override val token: Token,
+    val left: Expression?,
+    val operator: String,
+    val right: Expression?
+): Expression {
+    override fun toString(): String {
+        return "($left $operator $right)"
+    }
+}

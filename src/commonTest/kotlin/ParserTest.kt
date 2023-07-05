@@ -5,6 +5,38 @@ import kotlin.test.fail
 
 class ParserTest {
 
+    data class InfixTest(
+        val input: String,
+        val leftValue: Long,
+        val operator: String,
+        val rightValue: Long
+    )
+    @Test
+    fun testParsingInfixExpressions() {
+        val infixTests = listOf(
+            InfixTest("5 + 5", 5, "+", 5),
+            InfixTest("5 - 5;", 5, "-", 5),
+            InfixTest("5 * 5;", 5, "*", 5),
+            InfixTest("5 / 5;", 5, "/", 5),
+            InfixTest("5 > 5;", 5, ">", 5),
+            InfixTest("5 < 5;", 5, "<", 5),
+            InfixTest("5 == 5;", 5, "==", 5),
+            InfixTest("5 != 5;", 5, "!=", 5)
+        )
+
+        for (test in infixTests) {
+            val program = Parser(Lexer(test.input)).parseProgram()
+            assertEquals(1, program.statements.size)
+            val statement = program.statements[0]
+            assertTrue(statement is ExpressionStatement, "statement is not ExpressionStatement. Got $statement")
+            val exp = statement.expression
+            assertTrue(exp is InfixExpression, "exp is not InfixExpression. Got $exp")
+            testIntegerLiteral(exp.left, test.leftValue)
+            assertEquals(test.operator, exp.operator)
+            testIntegerLiteral(exp.right, test.rightValue)
+        }
+    }
+
     @Test
     fun testIdentifierExpression() {
         val input = "foobar;"
@@ -64,7 +96,7 @@ class ParserTest {
         }
     }
 
-    fun testIntegerLiteral(expression: Expression, value: Long): Boolean {
+    fun testIntegerLiteral(expression: Expression?, value: Long): Boolean {
         assertTrue(expression is IntegerLiteral, "expression not IntegerLiteral, got = $expression")
         assertEquals(value, expression.value)
         assertEquals(expression.tokenLiteral(), value.toString())
