@@ -4,6 +4,7 @@ import kotlin.test.assertTrue
 import kotlin.test.fail
 
 class ParserTest {
+
     data class InfixTest(
         val input: String,
         val leftValue: Long,
