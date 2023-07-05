@@ -4,14 +4,39 @@ import kotlin.test.assertTrue
 import kotlin.test.fail
 
 class ParserTest {
-    data class InfixTest(
-        val input: String,
-        val leftValue: Long,
-        val operator: String,
-        val rightValue: Long
-    )
+
+    @Test
+    fun testOperatorPrecedenceParsing() {
+        val tests = listOf(
+            "-a * b" to "((-a) * b)",
+            "!-a" to "(!(-a))",
+            "a + b + c" to "((a + b) + c)",
+            "a + b - c" to "((a + b) - c)",
+            "a * b * c" to "((a * b) * c)",
+            "a * b / c" to "((a * b) / c)",
+            "a + b / c" to "(a + (b / c))",
+            "a + b * c + d / e - f" to "(((a + (b * c)) + (d / e)) - f)",
+            "3 + 4; -5 * 5" to "(3 + 4)((-5) * 5)",
+            "5 > 4 == 3 < 4" to "((5 > 4) == (3 < 4))",
+            "5 < 4 != 3 > 4" to "((5 < 4) != (3 > 4))",
+            "3 + 4 * 5 == 3 * 1 + 4 * 5" to "((3 + (4 * 5)) == ((3 * 1) + (4 * 5)))",
+            "3 + 4 * 5 == 3 * 1 + 4 * 5" to "((3 + (4 * 5)) == ((3 * 1) + (4 * 5)))"
+        )
+
+        for ((input, expected) in tests) {
+            val program = Parser(Lexer(input)).parseProgram()
+            assertEquals(expected, program.toString())
+        }
+    }
+
     @Test
     fun testParsingInfixExpressions() {
+        data class InfixTest(
+            val input: String,
+            val leftValue: Long,
+            val operator: String,
+            val rightValue: Long
+        )
         val infixTests = listOf(
             InfixTest("5 + 5", 5, "+", 5),
             InfixTest("5 - 5;", 5, "-", 5),

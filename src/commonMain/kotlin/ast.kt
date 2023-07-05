@@ -12,7 +12,7 @@ class Program(val statements: ArrayList<Statement>): Node {
     override fun tokenLiteral() = if (statements.isNotEmpty()) statements[0].tokenLiteral() else ""
 
     override fun toString(): String {
-        return statements.joinToString { it.toString() }
+        return statements.joinToString(separator = "") { it.toString() }
     }
 }
 
