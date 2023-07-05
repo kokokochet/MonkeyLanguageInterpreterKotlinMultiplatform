@@ -41,8 +41,8 @@ class Parser(private val lexer: Lexer) {
 
         val statement = LetStatement(
             letToken,
-            null,
-            Identifier(curToken, curToken.literal)
+            Identifier(curToken, curToken.literal),
+            null
         )
 
         if (!expectPeek(TokenType.ASSIGN)) peekError(TokenType.ASSIGN)
