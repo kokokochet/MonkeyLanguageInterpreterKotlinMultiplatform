@@ -10,9 +10,27 @@ class Parser(private val lexer: Lexer) {
         //      ==      < or >        +    *        -X|+X   myFunction(x)
     }
 
-    private fun prefixParsers(t: TokenType): PrefixParse? = when (t) {
-        TokenType.IDENT -> ::parseIdentifier
-        else -> null
+    private fun prefixParsers(t: TokenType): PrefixParse = when (t) {
+        TokenType.IDENT -> {
+            { Identifier(curToken, curToken.literal) }
+        }
+        TokenType.INT -> {
+            {
+                val literal = curToken
+                val value = literal.literal.toLong()
+                IntegerLiteral(literal, value)
+            }
+        }
+        TokenType.BANG -> ::parsePrefixExpression
+        TokenType.MINUS -> ::parsePrefixExpression
+        else -> throw Exception("no prefix parse function for $t found")
+    }
+
+    private fun parsePrefixExpression(): Expression {
+        val tok = curToken
+        nextToken()
+        val right = parseExpression(Precedence.PREFIX)
+        return PrefixExpression(tok, tok.literal, right)
     }
 
     private fun nextToken() {
@@ -54,12 +72,8 @@ class Parser(private val lexer: Lexer) {
     }
 
     private fun parseExpression(p: Precedence): Expression? {
-        val prefix = prefixParsers(curToken.type)?:return null
+        val prefix = prefixParsers(curToken.type)
         return prefix()
-    }
-
-    private fun parseIdentifier(): Expression {
-        return Identifier(curToken, curToken.literal)
     }
 
     private fun parseReturnStatement(): Statement {

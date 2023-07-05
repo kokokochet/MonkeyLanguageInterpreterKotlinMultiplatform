@@ -39,3 +39,11 @@ class ExpressionStatement(override val token: Token, val expression: Expression?
         return expression?.toString() ?: ""
     }
 }
+
+class IntegerLiteral(override val token: Token, val value: Long): Expression
+
+class PrefixExpression(override val token: Token, val operator: String, val right: Expression?): Expression {
+    override fun toString(): String {
+        return "($operator$right)"
+    }
+}
