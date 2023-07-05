@@ -21,7 +21,16 @@ private class ParserTest {
             "5 > 4 == 3 < 4" to "((5 > 4) == (3 < 4))",
             "5 < 4 != 3 > 4" to "((5 < 4) != (3 > 4))",
             "3 + 4 * 5 == 3 * 1 + 4 * 5" to "((3 + (4 * 5)) == ((3 * 1) + (4 * 5)))",
-            "3 + 4 * 5 == 3 * 1 + 4 * 5" to "((3 + (4 * 5)) == ((3 * 1) + (4 * 5)))"
+            "3 + 4 * 5 == 3 * 1 + 4 * 5" to "((3 + (4 * 5)) == ((3 * 1) + (4 * 5)))",
+            "true" to "true",
+            "false" to "false",
+            "3 > 5 == false" to "((3 > 5) == false)",
+            "3 < 5 == true" to "((3 < 5) == true)",
+            "1 + (2 + 3) + 4" to "((1 + (2 + 3)) + 4)",
+            "(5 + 5) * 2" to "((5 + 5) * 2)",
+            "2 / (5 + 5)" to "(2 / (5 + 5))",
+            "-(5 + 5)" to "(-(5 + 5))",
+            "!(true == true)" to "(!(true == true))"
         )
 
         for ((input, expected) in tests) {
@@ -35,8 +44,16 @@ private class ParserTest {
             is Long -> testIntegerLiteral(expression, expected)
             is Int -> testIntegerLiteral(expression, expected.toLong())
             is String -> testIdentifier(expression, expected)
+            is Boolean -> testBooleanLiteral(expression, expected)
             else -> fail("type of value not handled. got=$expected")
         }
+    }
+
+    fun testBooleanLiteral(expression: Expression?, value: Boolean): Boolean {
+        assertTrue(expression is BooleanLiteral, "expression not IntegerLiteral, got = $expression")
+        assertEquals(value, expression.value)
+        assertEquals(expression.tokenLiteral(), value.toString())
+        return true
     }
 
     inline fun <reified LT, reified RT>testInfixExpression(
@@ -94,9 +111,9 @@ private class ParserTest {
         testInfixExpression("foobar < barfoo;", "foobar", "<", "barfoo")
         testInfixExpression("foobar == barfoo;", "foobar", "==", "barfoo")
         testInfixExpression("foobar != barfoo;", "foobar", "!=", "barfoo")
-//        testInfixExpression("true == true", true, "==", true)
-//        testInfixExpression("true != false", true, "!=", false)
-//        testInfixExpression("false == false", false, "==", false)
+        testInfixExpression("true == true", true, "==", true)
+        testInfixExpression("true != false", true, "!=", false)
+        testInfixExpression("false == false", false, "==", false)
     }
 
     @Test
@@ -143,11 +160,10 @@ private class ParserTest {
         }
     }
 
-    fun testIntegerLiteral(expression: Expression?, value: Long): Boolean {
+    fun testIntegerLiteral(expression: Expression?, value: Long) {
         assertTrue(expression is IntegerLiteral, "expression not IntegerLiteral, got = $expression")
         assertEquals(value, expression.value)
         assertEquals(expression.tokenLiteral(), value.toString())
-        return true
     }
 
     fun testLetStatement(s: Statement, name: String) {

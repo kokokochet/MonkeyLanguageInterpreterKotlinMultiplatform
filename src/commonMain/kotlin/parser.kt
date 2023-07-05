@@ -49,7 +49,7 @@ class Parser(private val lexer: Lexer) {
         )
     }
 
-    private fun prefixParsers(t: TokenType): PrefixParse = when (t) {
+    private fun prefixParsers(t: Token): PrefixParse = when (t.type) {
         TokenType.IDENT -> {
             { Identifier(curToken, curToken.literal) }
         }
@@ -64,7 +64,23 @@ class Parser(private val lexer: Lexer) {
 
         TokenType.BANG -> ::parsePrefixExpression
         TokenType.MINUS -> ::parsePrefixExpression
-        else -> throw Exception("no prefix parse function for $t found")
+        TokenType.TRUE -> ::parseBoolean
+        TokenType.FALSE -> ::parseBoolean
+        TokenType.LPAREN -> ::parseGroupedExpression
+        else -> throw Exception("no prefix parse function for '${t.literal}' found")
+    }
+
+    private fun parseGroupedExpression(): Expression? {
+        nextToken()
+        val expression = parseExpression(Precedence.LOWEST)
+        if (!expectPeek(TokenType.RPAREN)) {
+            return null
+        }
+        return expression
+    }
+
+    private fun parseBoolean(): Expression {
+        return BooleanLiteral(curToken, curToken.type == TokenType.TRUE)
     }
 
     private fun parsePrefixExpression(): Expression {
@@ -113,7 +129,7 @@ class Parser(private val lexer: Lexer) {
     }
 
     private fun parseExpression(p: Precedence): Expression? {
-        val prefix = prefixParsers(curToken.type)
+        val prefix = prefixParsers(curToken)
         var leftExp = prefix()
         while (!peekTokenIs(TokenType.SEMICOLON) && p < peekPrecedence()) {
             val infix = infixParsers(peekToken.type) ?: return leftExp

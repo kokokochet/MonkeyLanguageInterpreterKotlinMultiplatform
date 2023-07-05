@@ -61,3 +61,9 @@ class InfixExpression(
         return "($left $operator $right)"
     }
 }
+
+class BooleanLiteral(override val token: Token, val value: Boolean): Expression {
+    override fun toString(): String {
+        return value.toString()
+    }
+}
