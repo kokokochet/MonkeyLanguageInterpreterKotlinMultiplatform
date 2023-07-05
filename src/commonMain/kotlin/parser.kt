@@ -2,7 +2,7 @@ class Parser(private val lexer: Lexer) {
     private var curToken: Token = lexer.next()
     private var peekToken: Token = lexer.next()
 
-    fun nextToken() {
+    private fun nextToken() {
         curToken = peekToken
         peekToken = lexer.next()
     }
@@ -23,8 +23,16 @@ class Parser(private val lexer: Lexer) {
     private fun parseStatement(): Statement? {
         return when (curToken.type) {
             TokenType.LET -> parseLetStatement()
+            TokenType.RETURN -> parseReturnStatement()
             else -> null
         }
+    }
+
+    private fun parseReturnStatement(): Statement {
+        val statement = ReturnStatement(curToken, null)
+        nextToken()
+        while (!curTokenIs(TokenType.SEMICOLON)) nextToken()
+        return statement
     }
 
     private fun parseLetStatement(): LetStatement {
@@ -45,7 +53,7 @@ class Parser(private val lexer: Lexer) {
         return statement
     }
 
-    fun curTokenIs(t: TokenType) = curToken.type == t
+    private fun curTokenIs(t: TokenType) = curToken.type == t
     private fun peekTokenIs(t: TokenType) = peekToken.type == t
 
     private fun peekError(t: TokenType): Nothing {

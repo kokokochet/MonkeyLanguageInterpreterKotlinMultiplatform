@@ -31,9 +31,25 @@ class ParserTest{
         if (s.tokenLiteral() != "let") {
             fail("s.tokenLiteral() not 'let'. Got ${s.tokenLiteral()}")
         }
-        if (s !is LetStatement) fail("s not LetStatement. got=${s::class.qualifiedName}")
+        if (s !is LetStatement) fail("s not LetStatement. got=${s.token.type}")
         assertEquals(s.name!!.value, name)
         assertEquals(s.name!!.tokenLiteral(), name)
         return true
+    }
+
+    @Test
+    fun testReturnStatements() {
+        val input = """
+        return 5;
+        return 10;
+        return 993322;
+        """.trimIndent()
+        val parser = Parser(Lexer(input))
+        val program = parser.parseProgram()
+        assertEquals(3, program.statements.size)
+        for (stmt in program.statements) {
+            if (stmt !is ReturnStatement) fail("stmt not ReturnStatement. got=${stmt.token}")
+            assertEquals("return" , stmt.tokenLiteral())
+        }
     }
 }
