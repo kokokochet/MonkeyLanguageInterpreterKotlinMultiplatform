@@ -1,6 +1,19 @@
+typealias PrefixParse = () -> Expression?
+typealias InfixParse = (Expression?) -> Expression?
+
 class Parser(private val lexer: Lexer) {
     private var curToken: Token = lexer.next()
     private var peekToken: Token = lexer.next()
+
+    enum class Precedence {
+        LOWEST, EQUALS, LESS_GREATER, SUM, PRODUCT, PREFIX, CALL
+        //      ==      < or >        +    *        -X|+X   myFunction(x)
+    }
+
+    private fun prefixParsers(t: TokenType): PrefixParse? = when (t) {
+        TokenType.IDENT -> ::parseIdentifier
+        else -> null
+    }
 
     private fun nextToken() {
         curToken = peekToken
@@ -11,7 +24,7 @@ class Parser(private val lexer: Lexer) {
         val program = Program(ArrayList())
 
         while (curToken.type != TokenType.EOF) {
-            parseStatement()?.let {
+            parseStatement().let {
                 program.statements.add(it)
             }
             nextToken()
@@ -20,12 +33,33 @@ class Parser(private val lexer: Lexer) {
         return program
     }
 
-    private fun parseStatement(): Statement? {
+    private fun parseStatement(): Statement {
         return when (curToken.type) {
             TokenType.LET -> parseLetStatement()
             TokenType.RETURN -> parseReturnStatement()
-            else -> null
+            else -> parseExpressionStatement()
         }
+    }
+
+    private fun parseExpressionStatement(): Statement {
+        val tok = curToken
+        val statement = ExpressionStatement(
+            tok,
+            parseExpression(Precedence.LOWEST)
+        )
+        if (peekTokenIs(TokenType.SEMICOLON)) {
+            nextToken()
+        }
+        return statement
+    }
+
+    private fun parseExpression(p: Precedence): Expression? {
+        val prefix = prefixParsers(curToken.type)?:return null
+        return prefix()
+    }
+
+    private fun parseIdentifier(): Expression {
+        return Identifier(curToken, curToken.literal)
     }
 
     private fun parseReturnStatement(): Statement {

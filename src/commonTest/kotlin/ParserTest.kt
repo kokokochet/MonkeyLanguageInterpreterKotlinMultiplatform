@@ -3,6 +3,27 @@ import kotlin.test.assertEquals
 import kotlin.test.fail
 
 class ParserTest{
+
+    @Test
+    fun testIdentifierExpression() {
+        val input = "foobar;"
+        val parser = Parser(Lexer(input))
+        val program = parser.parseProgram()
+        assertEquals(1, program.statements.size)
+
+        val statement = program.statements[0]
+        if (statement !is ExpressionStatement) {
+            fail("program.statements[0] is not ExpressionStatement. Got $statement")
+        }
+
+        val ident = statement.expression
+        if (ident !is Identifier) {
+            fail("exp not Identifier. Got $ident")
+        }
+        assertEquals("foobar", ident.value)
+        assertEquals("foobar", ident.tokenLiteral())
+    }
+
     @Test
     fun testLetStatements() {
         val input = """

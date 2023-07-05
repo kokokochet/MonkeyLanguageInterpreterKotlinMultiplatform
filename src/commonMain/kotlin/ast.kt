@@ -5,10 +5,8 @@ interface Statement: Node {
     val token: Token
     override fun tokenLiteral(): String = token.literal
 }
-interface Expression: Node {
-    val token: Token
-    override fun tokenLiteral(): String = token.literal
-}
+
+typealias Expression = Statement
 
 class Program(val statements: ArrayList<Statement>): Node {
     override fun tokenLiteral() = if (statements.isNotEmpty()) statements[0].tokenLiteral() else ""
