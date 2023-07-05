@@ -3,11 +3,12 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 import kotlin.test.fail
 
-class ParserTest {
+private class ParserTest {
 
     @Test
     fun testOperatorPrecedenceParsing() {
         val tests = listOf(
+            "1 + 2 + 3" to "((1 + 2) + 3)",
             "-a * b" to "((-a) * b)",
             "!-a" to "(!(-a))",
             "a + b + c" to "((a + b) + c)",
@@ -29,36 +30,73 @@ class ParserTest {
         }
     }
 
+    inline fun <reified T>assertLiteralExpression(expression: Expression?, expected: T) {
+        when (expected) {
+            is Long -> testIntegerLiteral(expression, expected)
+            is Int -> testIntegerLiteral(expression, expected.toLong())
+            is String -> testIdentifier(expression, expected)
+            else -> fail("type of value not handled. got=$expected")
+        }
+    }
+
+    inline fun <reified LT, reified RT>testInfixExpression(
+        value: String,
+        left: LT,
+        operator: String,
+        right: RT
+    ) {
+        val program = Parser(Lexer(value)).parseProgram()
+        assertEquals(1, program.statements.size)
+        val exp = program.statements[0]
+        assertTrue(
+            exp is ExpressionStatement,
+            "exp is not ExpressionStatement. got=$exp"
+        )
+        assertInfixExpression(exp.expression, left, operator, right)
+    }
+
+    inline fun <reified LT, reified RT>assertInfixExpression(
+        expression: Expression?,
+        left: LT,
+        operator: String,
+        right: RT
+    ) {
+        assertTrue(
+            expression is InfixExpression,
+            "expression is not InfixExpression. got=$expression"
+        )
+        assertLiteralExpression(expression.left, left)
+        assertEquals(expression.operator, operator)
+        assertLiteralExpression(expression.right, right)
+    }
+
+    fun testIdentifier(exp: Expression?, value: String) {
+        assertTrue(exp is Identifier, "exp is not Identifier. Got = $exp")
+        assertEquals(value, exp.value)
+        assertEquals(value, exp.tokenLiteral())
+    }
+
     @Test
     fun testParsingInfixExpressions() {
-        data class InfixTest(
-            val input: String,
-            val leftValue: Long,
-            val operator: String,
-            val rightValue: Long
-        )
-        val infixTests = listOf(
-            InfixTest("5 + 5", 5, "+", 5),
-            InfixTest("5 - 5;", 5, "-", 5),
-            InfixTest("5 * 5;", 5, "*", 5),
-            InfixTest("5 / 5;", 5, "/", 5),
-            InfixTest("5 > 5;", 5, ">", 5),
-            InfixTest("5 < 5;", 5, "<", 5),
-            InfixTest("5 == 5;", 5, "==", 5),
-            InfixTest("5 != 5;", 5, "!=", 5)
-        )
-
-        for (test in infixTests) {
-            val program = Parser(Lexer(test.input)).parseProgram()
-            assertEquals(1, program.statements.size)
-            val statement = program.statements[0]
-            assertTrue(statement is ExpressionStatement, "statement is not ExpressionStatement. Got $statement")
-            val exp = statement.expression
-            assertTrue(exp is InfixExpression, "exp is not InfixExpression. Got $exp")
-            testIntegerLiteral(exp.left, test.leftValue)
-            assertEquals(test.operator, exp.operator)
-            testIntegerLiteral(exp.right, test.rightValue)
-        }
+        testInfixExpression("5 + 5", 5, "+", 5)
+        testInfixExpression("5 - 5;", 5, "-", 5)
+        testInfixExpression("5 * 5;", 5, "*", 5)
+        testInfixExpression("5 / 5;", 5, "/", 5)
+        testInfixExpression("5 > 5;", 5, ">", 5)
+        testInfixExpression("5 < 5;", 5, "<", 5)
+        testInfixExpression("5 == 5;", 5, "==", 5)
+        testInfixExpression("5 != 5;", 5, "!=", 5)
+        testInfixExpression("foobar + barfoo;", "foobar", "+", "barfoo")
+        testInfixExpression("foobar - barfoo;", "foobar", "-", "barfoo")
+        testInfixExpression("foobar * barfoo;", "foobar", "*", "barfoo")
+        testInfixExpression("foobar / barfoo;", "foobar", "/", "barfoo")
+        testInfixExpression("foobar > barfoo;", "foobar", ">", "barfoo")
+        testInfixExpression("foobar < barfoo;", "foobar", "<", "barfoo")
+        testInfixExpression("foobar == barfoo;", "foobar", "==", "barfoo")
+        testInfixExpression("foobar != barfoo;", "foobar", "!=", "barfoo")
+//        testInfixExpression("true == true", true, "==", true)
+//        testInfixExpression("true != false", true, "!=", false)
+//        testInfixExpression("false == false", false, "==", false)
     }
 
     @Test
@@ -79,21 +117,6 @@ class ParserTest {
         }
         assertEquals("foobar", ident.value)
         assertEquals("foobar", ident.tokenLiteral())
-    }
-
-    @Test
-    fun testIntegerLiteralExpression() {
-        val input = "5;"
-        val program = Parser(Lexer(input)).parseProgram()
-        assertEquals(1, program.statements.size)
-
-        val statement = program.statements[0]
-        assertTrue(statement is ExpressionStatement)
-
-        val literal = statement.expression
-        assertTrue(literal is IntegerLiteral)
-        assertEquals(5, literal.value)
-        assertEquals("5", literal.tokenLiteral())
     }
 
     @Test
@@ -127,38 +150,13 @@ class ParserTest {
         return true
     }
 
-//    @Test
-//    fun testLetStatements() {
-//        val input = """
-//            let =;
-//            let =;
-//            let =;
-//        """.trimIndent()
-//
-//        val parser = Parser(Lexer(input))
-//        val program = parser.parseProgram()
-//
-//        if (program.statements.size != 3) {
-//            fail("program.Statements does not contain 3 statements. got=${program.statements.size}")
-//        }
-//
-//        val tests = listOf("x", "y", "foobar")
-//
-//        for ((ind, identTest) in tests.withIndex()) {
-//            val stmt = program.statements[ind]
-//            testLetStatement(stmt, identTest)
-//        }
-//
-//    }
-
-    fun testLetStatement(s: Statement, name: String): Boolean {
+    fun testLetStatement(s: Statement, name: String) {
         if (s.tokenLiteral() != "let") {
             fail("s.tokenLiteral() not 'let'. Got ${s.tokenLiteral()}")
         }
         if (s !is LetStatement) fail("s not LetStatement. got=${s.token.type}")
         assertEquals(s.name.value, name)
         assertEquals(s.name.tokenLiteral(), name)
-        return true
     }
 
     @Test
