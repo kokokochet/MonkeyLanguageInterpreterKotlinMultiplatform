@@ -67,7 +67,42 @@ class Parser(private val lexer: Lexer) {
         TokenType.TRUE -> ::parseBoolean
         TokenType.FALSE -> ::parseBoolean
         TokenType.LPAREN -> ::parseGroupedExpression
+        TokenType.IF -> ::parseIfExpression
         else -> throw Exception("no prefix parse function for '${t.literal}' found")
+    }
+
+    private fun parseIfExpression(): Expression {
+        if (!expectPeek(TokenType.LPAREN)) throw Exception("open brace expected after if")
+
+        nextToken()
+        val condition = parseExpression(Precedence.LOWEST) ?:
+            (throw Exception("failed to parse if condition"))
+
+        if (!expectPeek(TokenType.RPAREN)) throw Exception("expected closing bracket in if condition")
+        if (!expectPeek(TokenType.LBRACE)) throw Exception("opening curly brace expected in if body")
+
+        val consequence = parseBlockStatement()
+        var alternative: BlockStatement? = null
+
+        if (peekTokenIs(TokenType.ELSE)) {
+            nextToken()
+            if (!expectPeek(TokenType.LBRACE)) throw Exception("opening curly brace expected in else body")
+
+            alternative = parseBlockStatement()
+        }
+
+        return IfExpression(condition, consequence, alternative)
+    }
+
+    private fun parseBlockStatement(): BlockStatement {
+        val tok = curToken
+        val statements = ArrayList<Statement>()
+        nextToken()
+        while (!curTokenIs(TokenType.RBRACE) && !curTokenIs(TokenType.EOF)) {
+            statements.add(parseStatement())
+            nextToken()
+        }
+        return BlockStatement(tok, statements)
     }
 
     private fun parseGroupedExpression(): Expression? {
@@ -99,9 +134,7 @@ class Parser(private val lexer: Lexer) {
         val program = Program(ArrayList())
 
         while (curToken.type != TokenType.EOF) {
-            parseStatement().let {
-                program.statements.add(it)
-            }
+            program.statements.add(parseStatement())
             nextToken()
         }
 

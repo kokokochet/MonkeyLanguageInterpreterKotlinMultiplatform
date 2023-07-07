@@ -6,6 +6,40 @@ import kotlin.test.fail
 private class ParserTest {
 
     @Test
+    fun testIfExpression() {
+        val input = "if (x < y) { x }"
+        val program = Parser(Lexer(input)).parseProgram()
+        assertEquals(1, program.statements.size)
+        val stmt = program.statements[0]
+        assertTrue(stmt is ExpressionStatement)
+        val exp = stmt.expression
+        assertTrue(exp is IfExpression)
+        assertInfixExpression(exp.condition, "x", "<", "y")
+        val consequence = exp.consequence.statements[0]
+        assertTrue(consequence is ExpressionStatement)
+        testIdentifier(consequence.expression, "x")
+        assertEquals(null, exp.alternative)
+    }
+
+    @Test
+    fun testIfElseExpression() {
+        val input = "if (x < y) { x } else { y }"
+        val program = Parser(Lexer(input)).parseProgram()
+        assertEquals(1, program.statements.size)
+        val stmt = program.statements[0]
+        assertTrue(stmt is ExpressionStatement)
+        val exp = stmt.expression
+        assertTrue(exp is IfExpression)
+        assertInfixExpression(exp.condition, "x", "<", "y")
+        val consequence = exp.consequence.statements[0]
+        assertTrue(consequence is ExpressionStatement)
+        testIdentifier(consequence.expression, "x")
+        val alternative = exp.alternative!!.statements[0]
+        assertTrue(alternative is ExpressionStatement)
+        testIdentifier(alternative.expression, "y")
+    }
+
+    @Test
     fun testOperatorPrecedenceParsing() {
         val tests = listOf(
             "1 + 2 + 3" to "((1 + 2) + 3)",
@@ -166,14 +200,14 @@ private class ParserTest {
         assertEquals(expression.tokenLiteral(), value.toString())
     }
 
-    fun testLetStatement(s: Statement, name: String) {
-        if (s.tokenLiteral() != "let") {
-            fail("s.tokenLiteral() not 'let'. Got ${s.tokenLiteral()}")
-        }
-        if (s !is LetStatement) fail("s not LetStatement. got=${s.token.type}")
-        assertEquals(s.name.value, name)
-        assertEquals(s.name.tokenLiteral(), name)
-    }
+//    fun testLetStatement(s: Statement, name: String) {
+//        if (s.tokenLiteral() != "let") {
+//            fail("s.tokenLiteral() not 'let'. Got ${s.tokenLiteral()}")
+//        }
+//        if (s !is LetStatement) fail("s not LetStatement. got=${s.token.type}")
+//        assertEquals(s.name.value, name)
+//        assertEquals(s.name.tokenLiteral(), name)
+//    }
 
     @Test
     fun testReturnStatements() {
