@@ -94,3 +94,9 @@ class FunctionLiteral(
         return "${tokenLiteral()}(${parameters.joinToString("")}) $body"
     }
 }
+
+class CallExpression(override val token: Token, val func: Expression, val args: List<Expression>): Expression {
+    override fun toString(): String {
+        return "$func(${args.joinToString(", ")})"
+    }
+}

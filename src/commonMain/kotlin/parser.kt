@@ -20,6 +20,7 @@ class Parser(private val lexer: Lexer) {
             TokenType.MINUS -> Precedence.SUM
             TokenType.SLASH -> Precedence.PRODUCT
             TokenType.ASTERISK -> Precedence.PRODUCT
+            TokenType.LPAREN -> Precedence.CALL
             else -> Precedence.LOWEST
         }
     }
@@ -33,7 +34,37 @@ class Parser(private val lexer: Lexer) {
         TokenType.EQ, TokenType.NOT_EQ,
         TokenType.LT, TokenType.GT -> ::parseInfixExpression
 
+        TokenType.LPAREN -> ::parseCallExpression
         else -> null
+    }
+
+    private fun parseCallExpression(function: Expression): Expression {
+        val tok = curToken
+        val args = parseCallArguments()
+        return CallExpression(tok, function, args)
+    }
+
+    private fun parseCallArguments(): List<Expression> {
+        val args = ArrayList<Expression>()
+        if (peekTokenIs(TokenType.RPAREN)) {
+            nextToken()
+            return args
+        }
+        nextToken()
+        args.add(
+            parseExpression(Precedence.LOWEST) ?: throw Exception("Function call parsing error")
+        )
+        while (peekTokenIs(TokenType.COMMA)) {
+            nextToken()
+            nextToken()
+            args.add(
+                parseExpression(Precedence.LOWEST) ?: throw Exception("Function call parsing error")
+            )
+        }
+
+        if (!expectPeek(TokenType.RPAREN)) throw Exception("The call expected a closing brace")
+
+        return args
     }
 
     private fun parseInfixExpression(left: Expression): Expression {
@@ -111,8 +142,7 @@ class Parser(private val lexer: Lexer) {
         if (!expectPeek(TokenType.LPAREN)) throw Exception("open brace expected after if")
 
         nextToken()
-        val condition = parseExpression(Precedence.LOWEST) ?:
-            (throw Exception("failed to parse if condition"))
+        val condition = parseExpression(Precedence.LOWEST) ?: (throw Exception("failed to parse if condition"))
 
         if (!expectPeek(TokenType.RPAREN)) throw Exception("expected closing bracket in if condition")
         if (!expectPeek(TokenType.LBRACE)) throw Exception("opening curly brace expected in if body")

@@ -6,6 +6,22 @@ import kotlin.test.fail
 private class ParserTest {
 
     @Test
+    fun testCallExpressionParsing() {
+        val input = "add(1, 2 * 3, 4 + 5);"
+        val program = Parser(Lexer(input)).parseProgram()
+        assertEquals(1, program.statements.size)
+        val statement = program.statements[0]
+        assertTrue(statement is ExpressionStatement)
+        val expression = statement.expression
+        assertTrue(expression is CallExpression)
+        testIdentifier(expression.func, "add")
+        assertEquals(3, expression.args.size)
+        assertLiteralExpression(expression.args[0], 1)
+        assertInfixExpression(expression.args[1], 2, "*", 3)
+        assertInfixExpression(expression.args[2], 4, "+", 5)
+    }
+
+    @Test
     fun testFunctionParameterParsing() {
         val tests = listOf(
             "fn() {};" to Array(0) { "" },
