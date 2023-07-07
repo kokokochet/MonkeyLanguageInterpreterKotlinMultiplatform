@@ -24,8 +24,8 @@ class Parser(private val lexer: Lexer) {
         }
     }
 
-    fun curPrecedence() = getPrecedence(curToken.type)
-    fun peekPrecedence() = getPrecedence(peekToken.type)
+    private fun curPrecedence() = getPrecedence(curToken.type)
+    private fun peekPrecedence() = getPrecedence(peekToken.type)
 
     private fun infixParsers(t: TokenType): InfixParse? = when (t) {
         TokenType.PLUS, TokenType.MINUS,
@@ -68,7 +68,43 @@ class Parser(private val lexer: Lexer) {
         TokenType.FALSE -> ::parseBoolean
         TokenType.LPAREN -> ::parseGroupedExpression
         TokenType.IF -> ::parseIfExpression
+        TokenType.FUNCTION -> ::parseFunctionLiteral
         else -> throw Exception("no prefix parse function for '${t.literal}' found")
+    }
+
+    private fun parseFunctionLiteral(): Expression {
+        if (!expectPeek(TokenType.LPAREN)) throw Exception("open brace expected after fn")
+
+        val params = parseFunctionParameters()
+
+        if (!expectPeek(TokenType.LBRACE)) throw Exception("expected closing brace after fn parameters")
+
+        val body = parseBlockStatement()
+
+        return FunctionLiteral(params, body)
+    }
+
+    private fun parseFunctionParameters(): List<Identifier> {
+        val identifiers = ArrayList<Identifier>()
+        if (peekTokenIs(TokenType.RPAREN)) {
+            nextToken()
+            return identifiers
+        }
+        nextToken()
+
+        identifiers.add(
+            Identifier(curToken, curToken.literal)
+        )
+
+        while (peekTokenIs(TokenType.COMMA)) {
+            nextToken()
+            nextToken()
+            identifiers.add(Identifier(curToken, curToken.literal))
+        }
+
+        if (!expectPeek(TokenType.RPAREN)) throw Exception("expected closing bracket for function parameters")
+
+        return identifiers
     }
 
     private fun parseIfExpression(): Expression {

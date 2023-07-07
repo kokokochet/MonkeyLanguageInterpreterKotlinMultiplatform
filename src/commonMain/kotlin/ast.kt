@@ -70,7 +70,7 @@ class BooleanLiteral(override val token: Token, val value: Boolean): Expression 
 
 class BlockStatement(override val token: Token, val statements: List<Statement>): Statement {
     override fun toString(): String {
-        return statements.joinToString("")
+        return "{\n ${statements.joinToString()} \n}"
     }
 }
 
@@ -82,5 +82,15 @@ class IfExpression(
     override val token: Token = Token(TokenType.IF, "if")
     override fun toString(): String {
         return "if $condition $consequence ${if (alternative == null) "" else " else $alternative"}"
+    }
+}
+
+class FunctionLiteral(
+    val parameters: List<Identifier>,
+    val body: BlockStatement
+): Expression {
+    override val token: Token = Token(TokenType.FUNCTION, "fn")
+    override fun toString(): String {
+        return "${tokenLiteral()}(${parameters.joinToString("")}) $body"
     }
 }

@@ -6,6 +6,42 @@ import kotlin.test.fail
 private class ParserTest {
 
     @Test
+    fun testFunctionParameterParsing() {
+        val tests = listOf(
+            "fn() {};" to Array(0) { "" },
+            "fn(x) {};" to arrayOf("x"),
+            "fn(x, y, z) {};" to arrayOf("x", "y", "z" )
+        )
+        for ((input, expectedParams) in tests) {
+            val program = Parser(Lexer(input)).parseProgram()
+            val statement = program.statements[0] as ExpressionStatement
+            val function = statement.expression as FunctionLiteral
+            assertEquals(expectedParams.size, function.parameters.size)
+            for ((i, ident) in expectedParams.withIndex()) {
+                assertLiteralExpression(function.parameters[i], ident)
+            }
+        }
+    }
+
+    @Test
+    fun testFunctionLiteralParsing() {
+        val input = "fn(x, y) { x + y; }"
+        val program = Parser(Lexer(input)).parseProgram()
+        assertEquals(1, program.statements.size)
+        val statement = program.statements[0]
+        assertTrue(statement is ExpressionStatement)
+        val func = statement.expression
+        assertTrue(func is FunctionLiteral)
+        assertEquals(2, func.parameters.size)
+        assertLiteralExpression(func.parameters[0], "x")
+        assertLiteralExpression(func.parameters[1], "y")
+        assertEquals(1, func.body.statements.size)
+        val bodyStatement = func.body.statements[0]
+        assertTrue(bodyStatement is ExpressionStatement)
+        assertInfixExpression(bodyStatement.expression, "x", "+", "y")
+    }
+
+    @Test
     fun testIfExpression() {
         val input = "if (x < y) { x }"
         val program = Parser(Lexer(input)).parseProgram()
@@ -73,7 +109,7 @@ private class ParserTest {
         }
     }
 
-    inline fun <reified T>assertLiteralExpression(expression: Expression?, expected: T) {
+    inline fun <reified T> assertLiteralExpression(expression: Expression?, expected: T) {
         when (expected) {
             is Long -> testIntegerLiteral(expression, expected)
             is Int -> testIntegerLiteral(expression, expected.toLong())
@@ -90,7 +126,7 @@ private class ParserTest {
         return true
     }
 
-    inline fun <reified LT, reified RT>testInfixExpression(
+    inline fun <reified LT, reified RT> testInfixExpression(
         value: String,
         left: LT,
         operator: String,
@@ -106,7 +142,7 @@ private class ParserTest {
         assertInfixExpression(exp.expression, left, operator, right)
     }
 
-    inline fun <reified LT, reified RT>assertInfixExpression(
+    inline fun <reified LT, reified RT> assertInfixExpression(
         expression: Expression?,
         left: LT,
         operator: String,
