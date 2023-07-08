@@ -1,5 +1,6 @@
 
-const val PROMPT = ">>"
+const val PROMPT = ">> "
+
 fun repl() {
     println("""
         Hello mrnugget! This is the Monkey programming language!
@@ -9,9 +10,9 @@ fun repl() {
         print(PROMPT)
         val inp = readlnOrNull() ?: return
         val lexer = Lexer(inp)
+        val parser = Parser(lexer)
 
-        for (tok in lexer) {
-            println(tok)
-        }
+        val program = parser.parseProgram()
+        println(program)
     }
 }

@@ -267,7 +267,7 @@ class Parser(private val lexer: Lexer) {
     private fun peekTokenIs(t: TokenType) = peekToken.type == t
 
     private fun peekError(t: TokenType): Nothing {
-        throw Exception("expected next token to be ${t.name}, got ${peekToken.type.name} instead")
+        throw Exception("expected next token to be ${t.name}, got ${peekToken.literal} instead")
     }
 
     private fun expectPeek(t: TokenType): Boolean {
