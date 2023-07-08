@@ -133,26 +133,26 @@ class Parser(private val lexer: Lexer) {
             identifiers.add(Identifier(curToken, curToken.literal))
         }
 
-        if (!expectPeek(TokenType.RPAREN)) throw Exception("expected closing bracket for function parameters")
+        if (!expectPeek(TokenType.RPAREN)) peekError(TokenType.RPAREN)
 
         return identifiers
     }
 
     private fun parseIfExpression(): Expression {
-        if (!expectPeek(TokenType.LPAREN)) throw Exception("open brace expected after if")
+        if (!expectPeek(TokenType.LPAREN)) peekError(TokenType.LPAREN)
 
         nextToken()
         val condition = parseExpression(Precedence.LOWEST) ?: (throw Exception("failed to parse if condition"))
 
-        if (!expectPeek(TokenType.RPAREN)) throw Exception("expected closing bracket in if condition")
-        if (!expectPeek(TokenType.LBRACE)) throw Exception("opening curly brace expected in if body")
+        if (!expectPeek(TokenType.RPAREN)) peekError(TokenType.RPAREN)
+        if (!expectPeek(TokenType.LBRACE)) peekError(TokenType.LBRACE)
 
         val consequence = parseBlockStatement()
         var alternative: BlockStatement? = null
 
         if (peekTokenIs(TokenType.ELSE)) {
             nextToken()
-            if (!expectPeek(TokenType.LBRACE)) throw Exception("opening curly brace expected in else body")
+            if (!expectPeek(TokenType.LBRACE)) peekError(TokenType.LBRACE)
 
             alternative = parseBlockStatement()
         }
@@ -239,28 +239,28 @@ class Parser(private val lexer: Lexer) {
     }
 
     private fun parseReturnStatement(): Statement {
-        val statement = ReturnStatement(curToken, null)
+        val tok = curToken
         nextToken()
-        while (!curTokenIs(TokenType.SEMICOLON)) nextToken()
-        return statement
+        val returnStatement = parseExpression(Precedence.LOWEST)
+        if (peekTokenIs(TokenType.SEMICOLON)) nextToken()
+        return ReturnStatement(tok, returnStatement)
     }
 
     private fun parseLetStatement(): LetStatement {
         val letToken = curToken
+
         if (!expectPeek(TokenType.IDENT)) peekError(TokenType.ASSIGN)
 
-        val statement = LetStatement(
-            letToken,
-            Identifier(curToken, curToken.literal),
-            null
-        )
+        val ident = Identifier(curToken, curToken.literal)
 
         if (!expectPeek(TokenType.ASSIGN)) peekError(TokenType.ASSIGN)
+        nextToken()
 
-        // TODO: We're skipping the expressions until we encounter a semicolon
-        while (curTokenIs(TokenType.ASSIGN)) nextToken()
+        val value = parseExpression(Precedence.LOWEST)
 
-        return statement
+        if (peekTokenIs(TokenType.SEMICOLON)) nextToken()
+
+        return LetStatement(letToken, ident, value)
     }
 
     private fun curTokenIs(t: TokenType) = curToken.type == t

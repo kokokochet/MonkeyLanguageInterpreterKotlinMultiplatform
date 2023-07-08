@@ -6,6 +6,25 @@ import kotlin.test.fail
 private class ParserTest {
 
     @Test
+    fun testLetStatements() {
+        val tests = listOf(
+            Triple("let x = 5;", "x", 5),
+            Triple("let y = true;", "y", true),
+            Triple("let foobar = y;", "foobar", "y")
+        )
+
+        for ((input, expectedIdentifier, expectedValue) in tests) {
+            val program = Parser(Lexer(input)).parseProgram()
+            assertEquals(1, program.statements.size)
+            val statement = program.statements[0]
+            assertTrue(statement is LetStatement)
+            assertLetStatement(statement, expectedIdentifier)
+            val value = statement.value
+            assertLiteralExpression(value, expectedValue)
+        }
+    }
+
+    @Test
     fun testCallExpressionParsing() {
         val input = "add(1, 2 * 3, 4 + 5);"
         val program = Parser(Lexer(input)).parseProgram()
@@ -26,7 +45,7 @@ private class ParserTest {
         val tests = listOf(
             "fn() {};" to Array(0) { "" },
             "fn(x) {};" to arrayOf("x"),
-            "fn(x, y, z) {};" to arrayOf("x", "y", "z" )
+            "fn(x, y, z) {};" to arrayOf("x", "y", "z")
         )
         for ((input, expectedParams) in tests) {
             val program = Parser(Lexer(input)).parseProgram()
@@ -120,8 +139,12 @@ private class ParserTest {
         )
 
         for ((input, expected) in tests) {
-            val program = Parser(Lexer(input)).parseProgram()
-            assertEquals(expected, program.toString())
+            try {
+                val program = Parser(Lexer(input)).parseProgram()
+                assertEquals(expected, program.toString())
+            } catch (e: Exception) {
+                error(input)
+            }
         }
     }
 
@@ -252,14 +275,16 @@ private class ParserTest {
         assertEquals(expression.tokenLiteral(), value.toString())
     }
 
-//    fun testLetStatement(s: Statement, name: String) {
-//        if (s.tokenLiteral() != "let") {
-//            fail("s.tokenLiteral() not 'let'. Got ${s.tokenLiteral()}")
-//        }
-//        if (s !is LetStatement) fail("s not LetStatement. got=${s.token.type}")
-//        assertEquals(s.name.value, name)
-//        assertEquals(s.name.tokenLiteral(), name)
-//    }
+    fun assertLetStatement(s: Statement, name: String) {
+        assertEquals(
+            "let",
+            s.tokenLiteral(),
+            "s.tokenLiteral() not 'let'. Got ${s.tokenLiteral()}"
+        )
+        if (s !is LetStatement) fail("s not LetStatement. got=${s.token.type}")
+        assertEquals(s.name.value, name)
+        assertEquals(s.name.tokenLiteral(), name)
+    }
 
     @Test
     fun testReturnStatements() {

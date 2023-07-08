@@ -1,6 +1,7 @@
 interface Node {
     fun tokenLiteral(): String
 }
+
 interface Statement: Node {
     val token: Token
     override fun tokenLiteral(): String = token.literal
@@ -24,7 +25,7 @@ class Identifier(override val token: Token, val value: String): Expression {
 
 class LetStatement(override val token: Token, val name: Identifier, val value: Expression?): Statement {
     override fun toString(): String {
-        return "${token.literal} $name = ${value?.toString() ?: ""};"
+        return "${token.literal} $name = $value;"
     }
 }
 
