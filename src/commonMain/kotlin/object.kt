@@ -20,7 +20,7 @@ value class BooleanObj(val value: Boolean): Object {
 }
 
 
-class Null(): Object {
+object Null: Object {
 
     override fun inspect(): String {
         return "null"

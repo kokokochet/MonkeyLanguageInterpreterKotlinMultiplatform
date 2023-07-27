@@ -18,13 +18,34 @@ class EvaluatorTest {
         }
     }
 
+    @Test
+    fun testEvalBooleanExpression() {
+        val tests = listOf(
+            "true" to true,
+            "false" to false
+        )
+        for ((inp, value) in tests) {
+            testBoooleanObject(
+                testEval(inp),
+                value
+            )
+        }
+    }
+
+    private fun testBoooleanObject(obj: Object, expected: Boolean) {
+        assertTrue(obj is BooleanObj)
+        assertEquals(expected, obj.value)
+    }
+
     private fun testEval(inp: String): Object {
         val p = Parser(Lexer(inp)).parseProgram()
-        return eval(p)
+        return Evaluator.eval(p)
     }
 
     private fun testIntegerObject(obj: Object, exp: Long) {
         assertTrue(obj is Integer)
         assertEquals(exp, obj.value)
     }
+
+
 }

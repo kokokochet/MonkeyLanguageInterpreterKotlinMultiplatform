@@ -13,6 +13,7 @@ fun repl() {
         val parser = Parser(lexer)
 
         val program = parser.parseProgram()
-        println(program)
+        val evaluated = Evaluator.eval(program)
+        println(evaluated.inspect())
     }
 }
