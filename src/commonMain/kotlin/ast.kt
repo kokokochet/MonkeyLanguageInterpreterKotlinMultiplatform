@@ -1,4 +1,4 @@
-interface Node {
+sealed interface Node {
     fun tokenLiteral(): String
 }
 
